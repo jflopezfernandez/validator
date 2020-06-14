@@ -2,6 +2,7 @@ package com.jflopezfernandez.validator;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Locale;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.stream.StreamSource;
@@ -18,6 +19,21 @@ import org.xml.sax.SAXException;
  * @author Jose Fernando Lopez Fernandez <jflopezfernandez@gmail.com>
  */
 public class Main {
+
+    /**
+     * The schema object constructor helper.
+     */
+    private static SchemaFactory factory = null;
+
+    /**
+     * The schema against which we will be validating.
+     */
+    private static Schema schema = null;
+
+    /**
+     * The class in charge of carrying out the actual validation.
+     */
+    private static Validator validator = null;
 
     /**
      * This is the entry point of the validation utility.
@@ -39,7 +55,49 @@ public class Main {
             System.exit(1);
         }
 
-        /** @todo Load the schema */
+        /**
+         * @todo Load the schema
+         */
+        try {
+            factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+            schema = factory.newSchema(new File(args[0]));
+        } catch (IOException ioException) {
+            /**
+             * @todo Actually handle the potential IOException
+             */
+            System.err.println("[Error]: " + ioException.getMessage());
+            System.exit(1);
+        } catch (SAXException saxException) {
+            /**
+             * @todo Actually handle the potential SAXException
+             */
+            System.err.println("[SAX Exception]: " + saxException.getMessage());
+            System.exit(1);
+        }
+
+        for (String arg : args) {
+            /**
+             * Skip the first argument, as it was the schema itself.
+             */
+            if (arg.equals(args[0])) {
+                continue;
+            }
+
+            /**
+             * Check whether the file correctly adheres to the specified schema.
+             */
+            try {
+                validator.validate(new StreamSource(new File(arg)));
+            } catch (IOException ioException) {
+                System.out.println(String.format(Locale.getDefault(), "[IOException] %s", ioException.getLocalizedMessage()));
+            } catch (SAXException saxException) {
+                System.out.println(String.format(Locale.getDefault(), "[%s] %s", arg, saxException.getLocalizedMessage()));
+                continue;
+            }
+
+            System.out.println(String.format(Locale.getDefault(), "[%s] File is valid", arg));
+        }
+
         /** @todo Validate files against the schema */
         System.out.println("Simulating program execution...");
     }
